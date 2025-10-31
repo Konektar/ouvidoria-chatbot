@@ -1,3 +1,4 @@
+Claro! Vou melhorar o README.md com diagramas compatíveis com o GitHub e uma estrutura mais clean. Aqui está a versão revisada:
 
 ```markdown
 # 🤖 Chatbot de Ouvidoria - Z-API + Spring Boot
@@ -10,24 +11,17 @@ Um sistema de atendimento automatizado para ouvidoria via WhatsApp, desenvolvido
 - **Fluxo conversacional** guiado para diferentes tipos de manifestação
 - **Suporte a usuários anônimos** e identificados
 - **Consentimento LGPD** integrado no fluxo
-- **Armazenamento local** (H2) e **Google Sheets**
+- **Armazenamento local** (H2/PostgreSQL) e **Google Sheets**
 - **Geração automática de protocolos**
 - **Menu interativo** com botões
 
-## 🏗️ Arquitetura do Sistema
 
-```
-┌─────────────┐    ┌─────────────┐    ┌──────────────┐
-│   Z-API     │───▶│  Spring Boot│───▶│  Database    │
-│  WhatsApp   │    │   Controller│    │  (H2)        │
-└─────────────┘    └─────────────┘    └──────────────┘
-│
-▼
-┌──────────────┐
-│ Google Sheets│
-│  (Relatório) │
-└──────────────┘
-```
+**Fluxo de dados:**
+1. **Z-API** → Recebe mensagens do WhatsApp
+2. **WebhookController** → Processa o payload
+3. **ChatbotService** → Gerencia o fluxo conversacional
+4. **Database** → Armazena usuários e manifestações
+5. **Google Sheets** → Backup e relatórios
 
 ## 📦 Tecnologias Utilizadas
 
@@ -120,7 +114,7 @@ src/
 └── main/
     └── resources/
         ├── application.properties
-        └── credentials.json  ← Coloque aqui!
+        └── credentials.json
 ```
 
 #### Passo 6: Compartilhe a planilha
@@ -180,92 +174,81 @@ Resposta esperada:
 ## 📱 Fluxo do Chatbot
 
 ```
-┌─────────────────┐
-│    INÍCIO       │ ← Bem-vindo + identificação
-└─────────────────┘
-         │
-         ▼
-┌─────────────────┐
-│ IDENTIFICAÇÃO   │ ← Anônimo ou Identificado
-└─────────────────┘
-         │
-         ▼
-┌─────────────────┐
-│     LGPD        │ ← Termos de consentimento
-└─────────────────┘
-         │
-         ▼
-┌─────────────────┐
-│ TIPO MANIFESTAÇÃO│← Elogio/Sugestão/Reclamação/Denúncia
-└─────────────────┘
-         │
-         ▼
-┌─────────────────┐
-│ CATEGORIA DENÚNCIA│← (Apenas para denúncias)
-└─────────────────┘
-         │
-         ▼
-┌─────────────────┐
-│  DETALHES       │ ← Descrição da manifestação
-└─────────────────┘
-         │
-         ▼
-┌─────────────────┐
-│  CONFirmaÇÃO    │ ← Resumo + confirmação
-└─────────────────┘
-         │
-         ▼
-┌─────────────────┐
-│   FINALIZADO    │ ← Protocolo gerado
-└─────────────────┘
+INÍCIO
+   ↓
+IDENTIFICAÇÃO (Anônimo/Identificado)
+   ↓
+LGPD (Consentimento)
+   ↓
+TIPO MANIFESTAÇÃO (Elogio/Sugestão/Reclamação/Denúncia)
+   ↓
+CATEGORIA DENÚNCIA (Apenas para denúncias)
+   ↓
+DETALHES (Descrição)
+   ↓
+CONFIRMAÇÃO (Resumo)
+   ↓
+FINALIZADO (Protocolo)
 ```
+
+**Estados do Chat:**
+- `INICIO` → Boas-vindas
+- `IDENTIFICACAO` → Escolha anônimo/identificado
+- `COLETA_IDENTIFICACAO` → Coleta de dados pessoais
+- `LGPD` → Consentimento de dados
+- `TIPO_MANIFESTACAO` → Seleção do tipo
+- `CATEGORIA_DENUNCIA` → Categoria (apenas denúncias)
+- `COLETA_DETALHES` → Descrição completa
+- `RESUMO_CONFIRMACAO` → Confirmação final
+- `FINALIZADO` → Geração do protocolo
 
 ## 🗃️ Estrutura do Banco de Dados
 
-### Tabela: `usuario`
-```sql
+### Tabelas Principais:
+
+**usuarios**
+```
 id, nome, telefone, email, anonimo, lgpd_consentimento, data_consentimento, data_criacao
 ```
 
-### Tabela: `manifestacao`
-```sql
+**manifestacoes**
+```
 id, tipo, categoria, descricao, resumo, protocolo, data_criacao, usuario_id
 ```
 
-### Tabela: `chat_state`
-```sql
+**chat_state**
+```
 phone_number, current_state, last_update
 ```
 
-### Tabela: `chat_state_context`
-```sql
+**chat_state_context**
+```
 phone_number, context_key, context_value
 ```
 
 ## 🌐 Endpoints da API
 
-### Webhook Z-API
-- **POST** `/webhook/zapi` - Recebe mensagens do WhatsApp
-
-### Health Check
-- **GET** `/webhook/health` - Status da aplicação
-- **GET** `/webhook/test` - Teste simples
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/webhook/zapi` | Webhook do Z-API |
+| `GET` | `/webhook/health` | Health check da aplicação |
+| `GET` | `/webhook/test` | Endpoint de teste |
 
 ## 📊 Estrutura do Google Sheets
 
 A planilha será automaticamente criada com as colunas:
 
-| Coluna | Descrição |
-|--------|-----------|
-| Número | ID sequencial |
-| Protocolo | Número do protocolo (ex: REC20240115-0001) |
-| Data Criação | Data/hora do registro |
-| Tipo | Elogio/Sugestão/Reclamação/Denúncia |
-| Categoria | Categoria da denúncia (se aplicável) |
-| Descrição | Descrição completa |
-| Resumo | Resumo automático |
-| Usuário | Nome ou "Anônimo" |
-| Status | Status do atendimento |
+| Coluna | Descrição | Exemplo |
+|--------|-----------|---------|
+| Número | ID sequencial | 1 |
+| Protocolo | Número do protocolo | REC20240115-0001 |
+| Data Criação | Data/hora do registro | 2024-01-15 10:30:00 |
+| Tipo | Tipo da manifestação | RECLAMACAO |
+| Categoria | Categoria da denúncia | - |
+| Descrição | Descrição completa | Problema com atendimento... |
+| Resumo | Resumo automático | [RECLAMACAO] Problema com... |
+| Usuário | Nome ou "Anônimo" | João Silva |
+| Status | Status do atendimento | PENDENTE |
 
 ## 🔍 Monitoramento e Debug
 
@@ -284,22 +267,22 @@ Em modo desenvolvimento, as credenciais são validadas e debugadas no startup.
 curl http://localhost:8080/webhook/health
 ```
 
-## 🐛 Solução de Problemas
+## 🐛 Solução de Problemas Comuns
 
-### Problema: Credenciais do Google não funcionam
-**Solução:**
+### ❌ Credenciais do Google não funcionam
+**✅ Solução:**
 1. Verifique se o `credentials.json` está em `src/main/resources/`
 2. Confirme se a service account tem acesso à planilha
 3. Verifique os logs de inicialização
 
-### Problema: Mensagens do WhatsApp não chegam
-**Solução:**
+### ❌ Mensagens do WhatsApp não chegam
+**✅ Solução:**
 1. Verifique se o webhook está configurado no Z-API
 2. Confirme os tokens no `application.properties`
 3. Teste o endpoint `/webhook/test`
 
-### Problema: Erro de banco de dados
-**Solução:**
+### ❌ Erro de banco de dados
+**✅ Solução:**
 1. Para H2: acesse `http://localhost:8080/h2-console`
 2. JDBC URL: `jdbc:h2:file:./data/ouvidoria`
 3. Usuário: `sa`, Senha: `password`
@@ -324,23 +307,47 @@ mvn clean package -DskipTests
 java -jar ouvidoria-chatbot-1.0.0.jar
 ```
 
-## 👥 Desenvolvimento
+## 👥 Estrutura do Projeto
 
-### Estrutura de pacotes
 ```
-br.com.konekta.ouvidoria/
-├── config/          # Configurações
-├── controller/      # Controladores REST
-├── model/          # Entidades JPA
-├── repository/     # Repositórios Spring Data
-├── service/        # Lógica de negócio
-└── model/enums/    # Enumeradores
+src/main/java/br/com/konekta/ouvidoria/
+├── config/
+│   ├── AsyncConfig.java
+│   ├── CredentialsDebug.java
+│   └── GoogleCredentialsManager.java
+├── controller/
+│   └── WebhookController.java
+├── model/
+│   ├── ChatState.java
+│   ├── Manifestacao.java
+│   ├── Usuario.java
+│   └── enums/
+│       ├── CategoriaDenuncia.java
+│       ├── EstadoChat.java
+│       ├── LgpdConsentimento.java
+│       └── TipoManifestacao.java
+├── repository/
+│   ├── ChatStateRepository.java
+│   ├── ManifestacaoRepository.java
+│   └── UsuarioRepository.java
+└── service/
+    ├── ChatbotService.java
+    ├── GoogleSheetsService.java
+    ├── ProtocoloService.java
+    └── ZApiClient.java
 ```
 
-### Para adicionar novos estados no chatbot
+## 🔄 Fluxo de Desenvolvimento
+
+### Para adicionar novos estados no chatbot:
 1. Adicione o estado em `EstadoChat`
 2. Implemente o handler em `ChatbotService`
 3. Atualize o fluxo nos métodos existentes
+
+### Para adicionar novos tipos de manifestação:
+1. Adicione o tipo em `TipoManifestacao`
+2. Atualize o `ProtocoloService` se necessário
+3. Adapte os métodos de coleta de detalhes
 
 ## 📄 Licença
 
@@ -348,6 +355,6 @@ Este projeto é para uso interno da Konekta.
 
 ---
 
-**Desenvolvido por** Rui Carlos Lorenzetti da Silva  
+**Desenvolvido por** Rui Carlos Lorenzetti da Silva 
 **Suporte**: [konekta.dev@gmail.com]
 ```

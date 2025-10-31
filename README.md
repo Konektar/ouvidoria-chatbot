@@ -1,6 +1,3 @@
-Perfeito! Com todas as informações recebidas, vou criar um README.md completo para seu projeto de Chatbot de Ouvidoria.
-
-Aqui está a documentação completa:
 
 ```markdown
 # 🤖 Chatbot de Ouvidoria - Z-API + Spring Boot
